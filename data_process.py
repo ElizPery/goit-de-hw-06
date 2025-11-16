@@ -71,7 +71,6 @@ schema = StructType([
 
 # Read streaming data from CSV
 csvDF = spark.read.csv("../data/alerts_conditions.csv", header=True)
-print(csvDF)
 
 # Cross join and Filter according to values
 filtered_t_df = (df_agg.join(csvDF, how="cross")
@@ -88,7 +87,7 @@ filtered_h_df = (df_agg.join(csvDF, how="cross")
 
 # Prepare data for Kafka: create key-value
 prepare_to_kafka_t_df = filtered_t_df.select(
-    date_format(col("window_start"), "yyyyMMddHHmmss").alias("key"),
+    col("window_start").cast("string").alias("key"),
 
     # Pack the payload into the 'value' column as JSON
     to_json(struct(
@@ -101,7 +100,7 @@ prepare_to_kafka_t_df = filtered_t_df.select(
     )).alias("value"))
 
 prepare_to_kafka_h_df = filtered_h_df.select(
-    date_format(col("window_start"), "yyyyMMddHHmmss").alias("key"),
+    col("window_start").cast("string").alias("key"),
 
     # Pack the payload into the 'value' column as JSON
     to_json(struct(
@@ -128,6 +127,7 @@ temp_query = prepare_to_kafka_t_df.writeStream \
             "org.apache.kafka.common.security.plain.PlainLoginModule required username='admin' password='VawEzo1ikLtrA8Ug8THa';") \
     .option("checkpointLocation", "/tmp/checkpoints-3") \
     .start()
+print("tem")
 
 queries.append(temp_query)
 
@@ -142,6 +142,7 @@ humidity_query = prepare_to_kafka_h_df.writeStream \
             "org.apache.kafka.common.security.plain.PlainLoginModule required username='admin' password='VawEzo1ikLtrA8Ug8THa';") \
     .option("checkpointLocation", "/tmp/checkpoints-4") \
     .start()
+print("hum")
 
 queries.append(humidity_query)
 
